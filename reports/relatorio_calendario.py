@@ -1,8 +1,7 @@
+from collections import defaultdict
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 import os
-import numpy as np
-from collections import defaultdict
 import textwrap
 from datetime import datetime
 
@@ -37,23 +36,43 @@ equipes_imagens = {
 }
 
 # Ler o CSV de próximas partidas
-df = pd.read_csv('data/proximas_partidas_normalizadas.csv', delimiter=",").dropna(subset=["Equipe 1", "Equipe 2"])
+df = pd.read_csv('data/proximas_partidas_normalizadas.csv', delimiter=",")
 
 # Função para formatar a data
 def formatar_data(data_str):
     try:
-        # Converter para objeto de data
         data_obj = datetime.strptime(data_str, '%d/%m/%Y')
-        # Formatar com nome do mês
         meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
                 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
         return f"{data_obj.day} de {meses[data_obj.month-1]}"
     except:
         return data_str
 
+# Função para abreviar nomes longos de equipes
+def abreviar_nome(nome, max_len=25):
+    if len(nome) > max_len:
+        palavras = nome.split()
+        abreviado = []
+        for palavra in palavras:
+            if len(palavra) > 3:
+                abreviado.append(palavra[:3] + ".")
+            else:
+                abreviado.append(palavra)
+        return " ".join(abreviado)
+    return nome
+
+# Função para ajustar a fonte do nome do time para que não ultrapasse a largura
+def ajustar_tamanho_texto(draw, texto, font, largura_maxima):
+    largura_texto, _ = draw.textbbox((0, 0), texto, font=font)[2:4]
+    if largura_texto > largura_maxima:
+        # Reduzir a fonte até o texto caber na largura máxima
+        while largura_texto > largura_maxima:
+            font = ImageFont.truetype(font.path, font.size - 1)  # Diminuir tamanho da fonte
+            largura_texto, _ = draw.textbbox((0, 0), texto, font=font)[2:4]
+    return font
+
 # Função para criar posts de jogos por local
 def criar_posts_jogos_por_local():
-    # Agrupar jogos por local e data
     jogos_por_local_data = defaultdict(list)
     
     for _, row in df.iterrows():
@@ -63,154 +82,159 @@ def criar_posts_jogos_por_local():
             chave = (local, data)
             jogos_por_local_data[chave].append(row)
     
-    # Criar um post para cada combinação de local e data
     for (local, data), jogos in jogos_por_local_data.items():
         criar_post_local_data(local, data, jogos)
 
-# Função para criar um post para um local e data específicos
-def criar_post_local_data(local, data, jogos):
-    # Criar uma imagem de fundo
-    background = Image.new('RGB', (1080, 1080), color=(0, 0, 51))  # Fundo azul escuro
+def criar_post_local_data(local, data, jogos): 
+    background = Image.new('RGB', (1080, 1080), color=(0, 0, 51))
     
-    # Carregar o logo AA para o canto direito
     try:
         logo_aa = Image.open('image/aa.jpg').convert("RGBA")
-        logo_aa = logo_aa.resize((100, 100))
-        background.paste(logo_aa, (950, 30), logo_aa if logo_aa.mode == 'RGBA' else None)
+        logo_aa = logo_aa.resize((120, 120))  # Aumentando o logo
+        background.paste(logo_aa, (950, 20), logo_aa if logo_aa.mode == 'RGBA' else None)
     except Exception as e:
         print(f"Erro ao carregar logo AA: {e}")
-    
-    # Criar o objeto de desenho
+
     draw = ImageDraw.Draw(background)
-    
-    # Carregar fontes
+
     try:
         title_font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 50)
-        date_title_font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 60)  # Fonte maior para a data
-        subtitle_font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 36)
-        category_font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 34)  # Fonte maior para categoria/horário
-        team_font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 28)
-        info_font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 24)
-        address_font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Italic.ttf', 22)
+        date_title_font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 60)
+        team_font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 42)
+        category_font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 38)
+        address_font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Italic.ttf', 36)
     except:
-        # Fallback para fonte padrão se não encontrar
         title_font = ImageFont.load_default()
         date_title_font = ImageFont.load_default()
-        subtitle_font = ImageFont.load_default()
-        category_font = ImageFont.load_default()
         team_font = ImageFont.load_default()
-        info_font = ImageFont.load_default()
+        category_font = ImageFont.load_default()
         address_font = ImageFont.load_default()
-    
-    # Adicionar título
+
+    # Título
     draw.text((540, 40), "BASQUETE FPB", font=title_font, fill=(255, 255, 255), anchor="mt")
-    
-    # Formatar e adicionar data em destaque
+
+    # Data em destaque com fundo
     data_formatada = formatar_data(data)
-    draw.text((540, 110), f"JOGOS {data_formatada}", font=date_title_font, fill=(255, 215, 0), anchor="mt")  # Dourado e maior
-    
-    # Altura inicial para começar a desenhar os jogos
-    y_pos = 180
-    
-    # Desenhar cada jogo com seus logos e informações
-    for i, jogo in enumerate(jogos):
-        if i >= 3:  # Limitar a 3 jogos por imagem
-            break
-            
-        equipe1 = jogo['Equipe 1']
-        equipe2 = jogo['Equipe 2']
-        categoria = jogo['Categoria']
-        horario = jogo['Horário']
-        
-        # Calcular posição Y para este jogo
-        jogo_y = y_pos + i * 280  # Espaçamento maior entre jogos
-        
-        # Obter as imagens dos times
-        imagem_time1 = equipes_imagens.get(equipe1, 'default.jpg')
-        image_path1 = os.path.join('image', imagem_time1)
-        if not os.path.exists(image_path1):
-            print(f"Imagem não encontrada para {equipe1}, usando default.jpg")
-            image_path1 = os.path.join('image', 'default.jpg')
-        
-        imagem_time2 = equipes_imagens.get(equipe2, 'default.jpg')
-        image_path2 = os.path.join('image', imagem_time2)
-        if not os.path.exists(image_path2):
-            print(f"Imagem não encontrada para {equipe2}, usando default.jpg")
-            image_path2 = os.path.join('image', 'default.jpg')
-        
-        try:
-            # Abrir e redimensionar as imagens dos times
-            logo1 = Image.open(image_path1).convert("RGBA")
-            logo1 = logo1.resize((180, 180))
-            
-            logo2 = Image.open(image_path2).convert("RGBA")
-            logo2 = logo2.resize((180, 180))
-            
-            # Adicionar logos dos times
-            background.paste(logo1, (250, jogo_y), logo1 if logo1.mode == 'RGBA' else None)
-            background.paste(logo2, (650, jogo_y), logo2 if logo2.mode == 'RGBA' else None)
-            
-            # Adicionar "VS" entre os logos
-            draw.text((540, jogo_y + 90), "VS", font=subtitle_font, fill=(255, 255, 255), anchor="mm")
-            
-            # Adicionar categoria e horário em fonte maior e mais destacada
-            categoria_horario = f"{categoria} - {horario}"
-            
-            # Criar um retângulo semi-transparente para destacar a categoria e horário
-            overlay = Image.new('RGBA', background.size, (0, 0, 0, 0))
-            overlay_draw = ImageDraw.Draw(overlay)
-            text_width = category_font.getbbox(categoria_horario)[2]
-            overlay_draw.rectangle(
-                [(540 - text_width//2 - 20, jogo_y + 190 - 10), 
-                 (540 + text_width//2 + 20, jogo_y + 190 + 40)], 
-                fill=(0, 0, 0, 128)
-            )
-            background = Image.alpha_composite(background.convert('RGBA'), overlay).convert('RGB')
-            draw = ImageDraw.Draw(background)
-            
-            # Adicionar texto da categoria e horário
-            draw.text((540, jogo_y + 190), categoria_horario, font=category_font, fill=(255, 215, 0), anchor="mt")
-            
-            # Adicionar linha separadora entre jogos
-            if i < len(jogos) - 1 and i < 2:  # Não adicionar após o último jogo
-                draw.line([(150, jogo_y + 240), (930, jogo_y + 240)], fill=(100, 100, 100), width=1)
-                
-        except Exception as e:
-            print(f"Erro ao processar logos para {equipe1} vs {equipe2}: {e}")
-    
-    # Adicionar endereço do local na parte inferior
-    y_pos = 900
-    
-    # Quebrar o endereço em múltiplas linhas se for muito longo
-    endereco_linhas = textwrap.wrap(local, width=70)
-    
-    # Desenhar retângulo semi-transparente para o endereço
+    data_text = f"JOGOS {data_formatada.upper()}"
+
+    # Criar retângulo para a data
+    text_bbox = draw.textbbox((0, 0), data_text, font=date_title_font)
+    text_width = text_bbox[2] - text_bbox[0]
+    text_height = text_bbox[3] - text_bbox[1]
+
+    # Desenhar retângulo para a data
     overlay = Image.new('RGBA', background.size, (0, 0, 0, 0))
     overlay_draw = ImageDraw.Draw(overlay)
-    overlay_draw.rectangle([(100, y_pos - 20), (980, y_pos + 30 * len(endereco_linhas))], fill=(0, 0, 0, 128))
+    overlay_draw.rectangle(
+        [(540 - text_width//2 - 20, 120 - 10), 
+         (540 + text_width//2 + 20, 120 + text_height + 10)], 
+        fill=(0, 0, 128, 180)
+    )
     background = Image.alpha_composite(background.convert('RGBA'), overlay).convert('RGB')
     draw = ImageDraw.Draw(background)
-    
-    # Adicionar título "LOCAL"
-    draw.text((540, y_pos - 40), "LOCAL", font=team_font, fill=(255, 215, 0), anchor="mt")
-    
-    # Adicionar endereço
-    for linha in endereco_linhas:
-        draw.text((540, y_pos), linha, font=address_font, fill=(255, 255, 255), anchor="mt")
-        y_pos += 30
-    
-    # Adicionar rodapé
-    draw.text((540, 1020), "FPB - Federação Paulista de Basketball", font=info_font, fill=(150, 150, 150), anchor="mt")
-    
-    # Criar nome do arquivo (usando parte do local para identificação)
+
+    # Texto da data
+    draw.text((540, 120), data_text, font=date_title_font, fill=(255, 215, 0), anchor="mt")
+
+    # Agrupar jogos por confronto (times únicos)
+    times_vistos = set()
+
+    # Jogos
+    y_offset = 230
+    for i, jogo in enumerate(jogos):
+        if i >= 8:  # Limitar a 8 jogos por imagem
+            break
+
+        equipe1 = jogo['Equipe 1']
+        equipe2 = jogo['Equipe 2']
+
+        # Verificar se este par de times já foi mostrado
+        par_times = frozenset([equipe1, equipe2])
+        if par_times in times_vistos:
+            continue
+
+        times_vistos.add(par_times)
+
+        equipe1_abrev = abreviar_nome(equipe1)
+        equipe2_abrev = abreviar_nome(equipe2)
+        categoria = jogo['Categoria']
+        horario = jogo['Horário']
+
+        # Fundo para cada jogo
+        overlay = Image.new('RGBA', background.size, (0, 0, 0, 0))
+        overlay_draw = ImageDraw.Draw(overlay)
+        overlay_draw.rectangle(
+            [(100, y_offset - 10), (980, y_offset + 90)], 
+            fill=(0, 0, 0, 128)
+        )
+        background = Image.alpha_composite(background.convert('RGBA'), overlay).convert('RGB')
+        draw = ImageDraw.Draw(background)
+
+        # Tentar carregar logos dos times
+        try:
+            # Time 1
+            imagem_time1 = equipes_imagens.get(equipe1, 'default.jpg')
+            image_path1 = os.path.join('image', imagem_time1)
+            if os.path.exists(image_path1):
+                logo1 = Image.open(image_path1).convert("RGBA")
+                logo1 = logo1.resize((80, 80))  # Ajustando tamanho
+                background.paste(logo1, (120, y_offset), logo1 if logo1.mode == 'RGBA' else None)
+        except:
+            pass
+
+        try:
+            # Time 2
+            imagem_time2 = equipes_imagens.get(equipe2, 'default.jpg')
+            image_path2 = os.path.join('image', imagem_time2)
+            if os.path.exists(image_path2):
+                logo2 = Image.open(image_path2).convert("RGBA")
+                logo2 = logo2.resize((80, 80))  # Ajustando tamanho
+                background.paste(logo2, (890, y_offset), logo2 if logo2.mode == 'RGBA' else None)
+        except:
+            pass
+
+        # Ajustar tamanho do nome do time
+        team_font_adjusted = ajustar_tamanho_texto(draw, f"{equipe1_abrev} x {equipe2_abrev}", team_font, 800)
+
+        # Texto do confronto
+        texto_jogo = f"{equipe1_abrev} x {equipe2_abrev}"
+        draw.text((540, y_offset + 20), texto_jogo, font=team_font_adjusted, fill=(255, 255, 255), anchor="mt")
+
+        # Exibir categorias e horários abaixo
+        texto_categoria = f"{categoria} - {horario}"
+        cat_font_adjusted = ajustar_tamanho_texto(draw, texto_categoria, category_font, 800)
+        draw.text((540, y_offset + 65), texto_categoria, font=cat_font_adjusted, fill=(255, 215, 0), anchor="mt")
+
+        y_offset += 110
+
+    # Local com fundo
+    endereco_linhas = textwrap.wrap(local, width=50)
+
+    # Retângulo para o local
+    overlay = Image.new('RGBA', background.size, (0, 0, 0, 0))
+    overlay_draw = ImageDraw.Draw(overlay)
+    overlay_draw.rectangle(
+        [(100, 900 - 10), (980, 900 + 40 * len(endereco_linhas) + 10)], 
+        fill=(0, 0, 128, 180)
+    )
+    background = Image.alpha_composite(background.convert('RGBA'), overlay).convert('RGB')
+    draw = ImageDraw.Draw(background)
+
+    # Título "LOCAL"
+    draw.text((540, 860), "LOCAL", font=team_font, fill=(255, 215, 0), anchor="mt")
+
+    # Texto do local
+    for i, linha in enumerate(endereco_linhas):
+        draw.text((540, 900 + i * 40), linha, font=address_font, fill=(255, 255, 255), anchor="mt")
+
+    # Rodapé
+    draw.text((540, 1030), "FPB - Federação Paulista de Basketball", font=category_font, fill=(150, 150, 150), anchor="mt")
+
+    # Salvar imagem
     local_abreviado = local.split()[0].lower()
-    filename = f"posts/proximos_jogos/jogos_{data.replace('/', '-')}_{local_abreviado}.jpg"
-    
-    # Salvar a imagem
-    background.save(filename)
-    print(f"Post de jogos no local '{local_abreviado}' para {data_formatada} criado com sucesso!")
+    nome_arquivo = f"posts/proximos_jogos/jogos_{data.replace('/', '-')}_{local_abreviado}.jpg"
+    background.save(nome_arquivo)
 
-# Executar a função para criar os posts
+    print(f"Post de jogos no local '{local_abreviado}' para {formatar_data(data)} criado com sucesso!")
+
 criar_posts_jogos_por_local()
-
-print("Posts de próximos jogos por local gerados!")
