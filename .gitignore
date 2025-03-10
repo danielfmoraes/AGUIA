@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+*.pyo
+*.pyd
+
+# Ambientes Virtuais
+.venv/
+venv/
+.env/
+
+# Configurações do Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Arquivos Temporários e de Cache
+*.tmp
+*.cache
+*.bak
+.DS_Store
+Thumbs.db
+
+# Arquivos de Mídia e Documentos
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+*.bmp
+*.tiff
+*.webp
+*.pdf
+*.pptx
+*.csv
