@@ -1,0 +1,44 @@
+1741570234749	geckodriver	INFO	Listening on 127.0.0.1:45205
+1741570235258	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" "/usr/bin/firefox" "--m ... ss" "--remote-debugging-port" "39741" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofileyCUKxU"
+*** You are running in headless mode.
+console.warn: services.settings: Ignoring preference override of remote settings server
+console.warn: services.settings: Allow by setting MOZ_REMOTE_SETTINGS_DEVTOOLS=1 in the environment
+1741570235684	Marionette	INFO	Marionette enabled
+1741570237139	Marionette	INFO	Listening on port 46651
+WebDriver BiDi listening on ws://127.0.0.1:39741
+Read port: 46651
+1741570237857	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new TypeError("this._searchProviderInfo is null", "resource:///modules/SearchSERPTelemetry.sys.mjs", 911))
+JavaScript error: https://www.fpb.com.br/wp-content/themes/fpb/dist/jogos.js, line 22: Invariant Violation: Minified React error #200; visit https://reactjs.org/docs/error-decoder.html?invariant=200 for the full message or use the non-minified dev environment for full errors and additional helpful warnings. 
+1741570250207	Marionette	INFO	Stopped listening on port 46651
+1741570253222	geckodriver	INFO	Listening on 127.0.0.1:39163
+1741570253725	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" "/usr/bin/firefox" "--m ... ss" "--remote-debugging-port" "55289" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofileTTlomW"
+*** You are running in headless mode.
+console.warn: services.settings: Ignoring preference override of remote settings server
+console.warn: services.settings: Allow by setting MOZ_REMOTE_SETTINGS_DEVTOOLS=1 in the environment
+1741570254207	Marionette	INFO	Marionette enabled
+1741570255544	Marionette	INFO	Listening on port 35181
+WebDriver BiDi listening on ws://127.0.0.1:55289
+Read port: 35181
+1741570256320	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+console.error: (new TypeError("this._searchProviderInfo is null", "resource:///modules/SearchSERPTelemetry.sys.mjs", 911))
+JavaScript error: https://www.fpb.com.br/wp-content/themes/fpb/dist/jogos.js, line 22: Invariant Violation: Minified React error #200; visit https://reactjs.org/docs/error-decoder.html?invariant=200 for the full message or use the non-minified dev environment for full errors and additional helpful warnings. 
+1741570265617	Marionette	INFO	Stopped listening on port 35181
+1741570268823	geckodriver	INFO	Listening on 127.0.0.1:47443
+1741570269327	mozrunner::runner	INFO	Running command: MOZ_CRASHREPORTER="1" MOZ_CRASHREPORTER_NO_REPORT="1" MOZ_CRASHREPORTER_SHUTDOWN="1" "/usr/bin/firefox" "--m ... ss" "--remote-debugging-port" "56463" "--remote-allow-hosts" "localhost" "-no-remote" "-profile" "/tmp/rust_mozprofile7mgWPw"
+*** You are running in headless mode.
+console.warn: services.settings: Ignoring preference override of remote settings server
+console.warn: services.settings: Allow by setting MOZ_REMOTE_SETTINGS_DEVTOOLS=1 in the environment
+1741570269717	Marionette	INFO	Marionette enabled
+1741570272408	Marionette	INFO	Listening on port 33573
+WebDriver BiDi listening on ws://127.0.0.1:56463
+Read port: 33573
+1741570273393	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
+console.error: ({})
+JavaScript error: https://www.fpb.com.br/wp-content/themes/fpb/dist/jogos.js, line 22: Invariant Violation: Minified React error #200; visit https://reactjs.org/docs/error-decoder.html?invariant=200 for the full message or use the non-minified dev environment for full errors and additional helpful warnings. 
+1741570294114	Marionette	INFO	Stopped listening on port 33573
