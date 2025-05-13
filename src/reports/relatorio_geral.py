@@ -1,8 +1,6 @@
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 import os
-import numpy as np
-from collections import defaultdict
 
 # Criar a pasta 'posts' se não existir
 os.makedirs("posts", exist_ok=True)
@@ -10,7 +8,7 @@ os.makedirs("posts", exist_ok=True)
 # Verificar se a pasta de imagens existe
 if not os.path.exists('image'):
     print("Pasta 'image' não encontrada! Certifique-se de que as imagens estejam no diretório correto.")
-    
+
 # Mapeamento das equipes para suas imagens
 equipes_imagens = {
     'CIRCULO MILITAR S.P.': 'circulo_militar.jpg',
@@ -59,27 +57,31 @@ equipes_imagens = {
     'MOGI BASQUETE': 'mogi1.jpg',
 }
 
-# Ler o CSV garantindo que o separador está correto
+# Ler o CSV e garantir que as categorias que podem ser "nan" sejam tratadas
 df = pd.read_csv('data/partidas_normalizadas.csv', delimiter=",").dropna(subset=["Equipe 1", "Equipe 2", "Placar"])
-print(df.head())
-# Filtrar as categorias e limpar os dados nulos
-df.dropna(subset=['Categoria'], inplace=True)
 
-# Função para calcular as estatísticas por categoria
+# Não remover as linhas com "nan" na categoria, mas substituir por um valor padrão (se necessário)
+df['Categoria'].fillna('Categoria Desconhecida', inplace=True)
+
+# Função para calcular as estatísticas gerais do campeonato, divididas por categoria
 def calcular_estatisticas_por_categoria():
-    categorias = df['Categoria'].unique()
     estatisticas_por_categoria = {}
 
+    # Separar os times por categoria
+    categorias = df['Categoria'].unique()
+
     for categoria in categorias:
-        categoria_df = df[df['Categoria'] == categoria]
         estatisticas = {}
         
+        # Filtrar partidas para a categoria
+        df_categoria = df[df['Categoria'] == categoria]
+        
         # Calcular estatísticas por time
-        times = pd.concat([categoria_df['Equipe 1'], categoria_df['Equipe 2']]).unique()
+        times = pd.concat([df_categoria['Equipe 1'], df_categoria['Equipe 2']]).unique()
         
         for time in times:
             # Estatísticas do time
-            time_df = categoria_df[(categoria_df['Equipe 1'] == time) | (categoria_df['Equipe 2'] == time)]
+            time_df = df_categoria[(df_categoria['Equipe 1'] == time) | (df_categoria['Equipe 2'] == time)]
             
             vitorias = 0
             derrotas = 0
@@ -89,14 +91,12 @@ def calcular_estatisticas_por_categoria():
             
             for _, row in time_df.iterrows():
                 jogos += 1
-                # Verificar se o time venceu
                 if (row['Equipe 1'] == time and int(row['Placar'].split('x')[0]) > int(row['Placar'].split('x')[1])) or \
                    (row['Equipe 2'] == time and int(row['Placar'].split('x')[1]) > int(row['Placar'].split('x')[0])):
                     vitorias += 1
                 else:
                     derrotas += 1
                 
-                # Atualizar os pontos
                 if row['Equipe 1'] == time:
                     pontos_pro += int(row['Placar'].split('x')[0])
                     pontos_contra += int(row['Placar'].split('x')[1])
@@ -115,72 +115,120 @@ def calcular_estatisticas_por_categoria():
                 'saldo_pontos': saldo_pontos
             }
 
-        estatisticas_por_categoria[categoria] = estatisticas
+        # Ordenar os times por vitórias e saldo de pontos
+        estatisticas_ordenadas = sorted(estatisticas.items(), key=lambda x: (-x[1]['vitorias'], -x[1]['saldo_pontos']))
+        
+        # Adicionar à lista de estatísticas por categoria
+        estatisticas_por_categoria[categoria] = estatisticas_ordenadas[:20]  # Limitar a 20 times por categoria
+    
     return estatisticas_por_categoria
 
-# Função para criar o post de resumo da categoria
-def criar_post_resumo_categoria(categoria, estatisticas):
-    # Configurações da imagem
-    largura = 1200
-    altura = 900
-    background = Image.new('RGB', (largura, altura), (0, 0, 0))
-    draw = ImageDraw.Draw(background)
-    
-    # Adicionar título da categoria
-    try:
-        titulo_font = ImageFont.truetype("path/to/font.ttf", 40)
-        stats_font = ImageFont.truetype("path/to/font.ttf", 30)
-    except IOError:
-        print("Fonte não encontrada, usando fonte padrão")
-        titulo_font = ImageFont.load_default()
-        stats_font = ImageFont.load_default()
-
-    draw.text((10, 10), f"Classificação - {categoria}", font=titulo_font, fill=(255, 255, 255))
-    
-    # Adicionar cabeçalho
-    draw.text((150, 50), "Equipe", font=stats_font, fill=(255, 255, 255))
-    draw.text((540, 50), "Jogos", font=stats_font, fill=(255, 255, 255))
-    draw.text((600, 50), "Vitórias", font=stats_font, fill=(255, 255, 255))
-    draw.text((660, 50), "Derrotas", font=stats_font, fill=(255, 255, 255))
-    draw.text((720, 50), "Aproveitamento", font=stats_font, fill=(255, 255, 255))
-    draw.text((830, 50), "Saldo de Pontos", font=stats_font, fill=(255, 255, 255))
-
-    # Adicionar estatísticas de cada time
-    y_pos = 80
-    for time, stats in estatisticas.items():
+# Função para criar o post de classificação por categoria
+def criar_post_classificacao_categoria(estatisticas_por_categoria):
+    for categoria, estatisticas in estatisticas_por_categoria.items():
+        largura = 1200
+        altura = 900
+        background = Image.new('RGB', (largura, altura), (0, 0, 51))  # Fundo azul
+        draw = ImageDraw.Draw(background)
+        
         try:
-            nome_time = time
-            # Adicionar logo da equipe
-            logo_path = f'image/{equipes_imagens.get(time, "default_logo.png")}'  # Caminho da imagem
-            if os.path.exists(logo_path):
-                logo = Image.open(logo_path)
-                logo.thumbnail((40, 40))  # Redimensionar logo para caber na imagem
-                background.paste(logo, (100, y_pos - 10))  # Ajuste a posição do logo
-            else:
-                print(f"Logo não encontrado para {time}, utilizando logo padrão.")
-                logo_path = 'image/default_logo.png'  # Caminho para o logo padrão
-                if os.path.exists(logo_path):
-                    logo = Image.open(logo_path)
-                    logo.thumbnail((40, 40))  # Redimensionar logo para caber na imagem
-                    background.paste(logo, (100, y_pos - 10))  # Ajuste a posição do logo
-                else:
-                    print(f"Logo padrão também não encontrado. Usando um espaço em branco.")
-                    # Criar um logo em branco (opcional)
-                    default_logo = Image.new('RGB', (40, 40), (255, 255, 255))  # Branco
-                    background.paste(default_logo, (100, y_pos - 10))
+            team_font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 18)
+        except IOError:
+            print("Fonte não encontrada, usando fonte padrão")
+            team_font = ImageFont.load_default()
 
-            # Adicionar texto com as estatísticas
-            draw.text((150, y_pos), nome_time, font=stats_font, fill=(255, 255, 255))
-            draw.text((540, y_pos), str(stats['jogos']), font=stats_font, fill=(255, 255, 255))
-            draw.text((600, y_pos), str(stats['vitorias']), font=stats_font, fill=(255, 255, 255))
-            draw.text((660, y_pos), str(stats['derrotas']), font=stats_font, fill=(255, 255, 255))
-            draw.text((720, y_pos), f"{stats['aproveitamento']:.2f}%", font=stats_font, fill=(255, 255, 255))
-            draw.text((830, y_pos), str(stats['saldo_pontos']), font=stats_font, fill=(255, 255, 255))
-            y_pos += 60  # Ajustar o espaçamento entre as linhas
-        except Exception as e:
-            print(f"Erro ao adicionar dados de {time}: {e}")
+        # Adicionar título centralizado
+        draw.text((largura // 2, 50), f"CLASSIFICAÇÃO - {categoria}", font=team_font, fill=(255, 255, 255), anchor="mt")
 
-    # Salvar imagem
-    output_file = f"posts/classificacao_{categoria}.png"
-    background.save(output_file)
-    print(f"Post criado para a categoria {categoria}: {output_file}")
+        # Determinar quantos times mostrar (máximo 20)
+        num_times = len(estatisticas)
+        
+        # Altura inicial para começar a desenhar as estatísticas
+        y_start = 120
+        
+        # Desenhar cabeçalho da tabela
+        header_y = y_start + 20
+        draw.text((150, header_y), "Time", font=team_font, fill=(255, 255, 255))
+        draw.text((540, header_y), "J", font=team_font, fill=(255, 255, 255))
+        draw.text((600, header_y), "V", font=team_font, fill=(255, 255, 255))
+        draw.text((660, header_y), "D", font=team_font, fill=(255, 255, 255))
+        draw.text((720, header_y), "Aprov.", font=team_font, fill=(255, 255, 255))
+        draw.text((830, header_y), "Saldo", font=team_font, fill=(255, 255, 255))
+        
+        # Desenhar linha separadora
+        draw.line([(100, header_y + 30), (980, header_y + 30)], fill=(150, 150, 150), width=2)
+        
+        # Altura de cada linha da tabela (reduzida para caber mais times)
+        row_height = 50
+        
+        # Adicionar mais espaço antes do primeiro time
+        first_team_offset = 40  # Espaço adicional antes do primeiro time
+        
+        # Desenhar estatísticas para cada time
+        for i, (time, stats) in enumerate(estatisticas):
+            # Calcular posição Y para esta linha
+            y_pos = y_start + 60 + first_team_offset + i * row_height
+            
+            # Obter a imagem do time
+            imagem_time = equipes_imagens.get(time, 'default.jpg')
+            image_path = os.path.join('image', imagem_time)
+            if not os.path.exists(image_path):
+                print(f"Imagem não encontrada para {time}, usando default.jpg")
+                image_path = os.path.join('image', 'default.jpg')
+            
+            try:
+                # Abrir e redimensionar a imagem do time
+                logo = Image.open(image_path).convert("RGBA")
+                logo = logo.resize((30, 30))  # Tamanho muito reduzido
+                
+                # Adicionar logo do time
+                background.paste(logo, (110, y_pos - 15), logo if logo.mode == 'RGBA' else None)
+                
+                # Abreviar nome do time se for muito longo
+                nome_time = time
+                if len(nome_time) > 25:
+                    palavras = nome_time.split()
+                    nome_abreviado = []
+                    for palavra in palavras:
+                        if len(palavra) > 3:
+                            nome_abreviado.append(palavra[:3] + ".")
+                        else:
+                            nome_abreviado.append(palavra)
+                    nome_time = " ".join(nome_abreviado)
+                
+                # Adicionar nome do time
+                draw.text((180, y_pos), nome_time, font=team_font, fill=(255, 255, 255))
+                
+                # Adicionar estatísticas
+                draw.text((540, y_pos), str(stats['jogos']), font=team_font, fill=(255, 255, 255), anchor="mt")
+                draw.text((600, y_pos), str(stats['vitorias']), font=team_font, fill=(0, 255, 0), anchor="mt")  # Verde para vitórias
+                draw.text((660, y_pos), str(stats['derrotas']), font=team_font, fill=(255, 0, 0), anchor="mt")  # Vermelho para derrotas
+                draw.text((720, y_pos), f"{stats['aproveitamento']:.1f}%", font=team_font, fill=(255, 255, 255), anchor="mt")
+                
+                # Saldo de pontos com cor baseada no valor
+                saldo_cor = (0, 255, 0) if stats['saldo_pontos'] > 0 else (255, 0, 0) if stats['saldo_pontos'] < 0 else (255, 255, 255)
+                saldo_texto = f"+{stats['saldo_pontos']}" if stats['saldo_pontos'] > 0 else str(stats['saldo_pontos'])
+                draw.text((830, y_pos), saldo_texto, font=team_font, fill=saldo_cor, anchor="mt")
+                
+                # Desenhar linha separadora
+                if i < num_times - 1:
+                    draw.line([(100, y_pos + 25), (980, y_pos + 25)], fill=(100, 100, 100), width=1)
+                    
+            except Exception as e:
+                print(f"Erro ao processar estatísticas para {time}: {e}")
+        
+        # Adicionar rodapé
+        draw.text((540, 1020), "FPB - Federação Paulista de Basketball", font=team_font, fill=(150, 150, 150), anchor="mt")
+        
+        # Criar nome do arquivo
+        filename = f"posts/classificacao_{categoria}.jpg"
+        
+        # Salvar a imagem
+        background.save(filename)
+        print(f"Post de classificação para a categoria {categoria} criado com sucesso!")
+
+# Calcular as estatísticas por categoria
+estatisticas_por_categoria = calcular_estatisticas_por_categoria()
+
+# Criar os posts de classificação por categoria
+criar_post_classificacao_categoria(estatisticas_por_categoria)
