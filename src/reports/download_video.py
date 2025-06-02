@@ -1,12 +1,15 @@
 import yt_dlp
 
-video_url = "https://www.youtube.com/watch?v=NU4s2r84K5A"
+# Solicita ao usuário o link do vídeo
+video_url = input("Digite o link do vídeo do YouTube: ")
 
+# Opções de download
 ydl_opts = {
     'format': 'best',
     'outtmpl': 'data/video.mp4',
 }
 
+# Realiza o download
 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
     ydl.download([video_url])
 

@@ -1,0 +1,70 @@
+AGUIA – Scraper da Federação Paulista de Basketball (FPB)
+AGUIA é uma ferramenta automatizada desenvolvida em Python para extrair e organizar informações dos campeonatos promovidos pela Federação Paulista de Basketball (FPB). O sistema coleta dados como jogos realizados, calendário de partidas e estatísticas, estruturando essas informações em planilhas e postagens para facilitar o acompanhamento e análise dos torneios.
+
+🏀 Funcionalidades
+Coleta de Dados: Extrai informações atualizadas sobre jogos, resultados e calendários diretamente do site oficial da FPB.
+
+Organização em Planilhas: Estrutura os dados coletados em arquivos CSV ou Excel, permitindo fácil manipulação e análise.
+
+Geração de Postagens: Cria conteúdos formatados para divulgação de resultados e informações dos campeonatos.
+
+Interface Gráfica (GUI): Disponibiliza uma interface amigável para interação com o sistema, permitindo executar as funcionalidades sem necessidade de comandos no terminal.
+
+📦 Instalação
+Clone o repositório:
+
+bash
+Copiar
+Editar
+git clone https://github.com/danielfmoraes/AGUIA.git
+cd AGUIA
+Crie um ambiente virtual (opcional, mas recomendado):
+
+bash
+Copiar
+Editar
+python -m venv venv
+source venv/bin/activate  # No Windows: venv\Scripts\activate
+Instale as dependências:
+
+bash
+Copiar
+Editar
+pip install -r requirements.txt
+Nota: O Tkinter geralmente já vem instalado com o Python. Se necessário, instale-o separadamente:
+
+Ubuntu/Debian: sudo apt-get install python3-tk
+
+Windows: Incluído na instalação padrão do Python
+
+macOS: Incluído na instalação padrão do Python
+
+🚀 Executando a Aplicação
+Após a instalação, execute a interface gráfica com:
+
+bash
+Copiar
+Editar
+python main_gui.py
+A interface permitirá que você selecione as funcionalidades desejadas, como coletar dados de jogos realizados, visualizar o calendário de partidas e gerar postagens ou planilhas com as informações obtidas.
+
+📁 Estrutura do Projeto
+bash
+Copiar
+Editar
+AGUIA/
+├── aguia.py             # Script principal com a lógica de scraping e processamento de dados
+├── main_gui.py          # Script da interface gráfica
+├── requirements.txt     # Lista de dependências
+└── README.md            # Este arquivo
+🧪 Exemplo de Uso
+Abra a aplicação com python main_gui.py.
+
+Na interface, selecione a opção para coletar dados dos jogos realizados.
+
+O sistema irá extrair as informações do site da FPB e gerar uma planilha com os dados organizados.
+
+Utilize as outras funcionalidades disponíveis conforme necessário.
+
+📄 Licença
+Este projeto está licenciado sob a MIT License.

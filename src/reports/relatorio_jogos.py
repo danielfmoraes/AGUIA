@@ -49,7 +49,8 @@ equipes_imagens = {
     'ARARAQUARA – ABA / FUNDESPORT' : 'aba.jpg',
     'TIME JUNDIAI-JUNBASKET' : 'jundiai.jpg', 
     'F.R. MARILIA': 'sl.jpg', 
-    'MOGI BASQUETE' : 'mogi1.jpg' , 
+    'MOGI BASQUETE' : 'mogi1.jpg' ,
+    'F.R. MIRASSOL,': 'mr.jpg', 
 }
 # Ler o CSV
 df = pd.read_csv('data/partidas_normalizadas.csv', delimiter=",")

@@ -36,7 +36,7 @@ equipes_imagens = {
     'HIPICA CAMPINAS': 'hipica.jpg',
     'SESI-SP / FRANCA BASQUETE': 'sesi_franca.png',
     'CAC / CRAVINHOS BASKETBALL': 'cac.jpg',
-    'F.R. MIRASSOL': 'mirassol.jpg',
+    'F.R. MIRASSOL': 'mr.jpg',
     'F.R. TUPÃ': 'fbauru.jpg',
     'SOROCABA BASQUETE': 'sorocaba.jpg',
     'SANTANA DE PARNAÍBA/AJABASK': 'ajabask.jpg',
